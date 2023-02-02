@@ -2,7 +2,7 @@
 
 !include <C4/C4_Container>
 !include <C4/C4_Component>
-'LAYOUT_LANDSCAPE()
+LAYOUT_LANDSCAPE()
 'skinparam Linetype ortho
 skinparam linetype polyline
 skinparam wrapWidth 300
