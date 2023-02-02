@@ -1,0 +1,77 @@
+@startuml
+
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+'LAYOUT_LANDSCAPE()
+'skinparam Linetype ortho
+skinparam linetype polyline
+skinparam wrapWidth 300
+
+
+Person(manager, "Менеджер")
+Person(client, "Представитель клиента")
+Person(user, "Пользователь")
+
+System_Boundary(bookingSystem, "Booking system"){
+    Boundary(views, "") {
+       Container(webUI, "Web Application", "ASP.NET", "Веб-приложение для доступа к функциям системы бронирования")
+       Container(mobileApp, "Mobile App", "Kotlin, Swift", "Мобильное приложение для доступа к функциям системы бронирования") 
+    }
+    Boundary(businessLogic, "Микросервис бизнес-логики") {
+        Container(bookingService, "Booking service","C#, .NET", "Выполенение основной логики приложения") {
+        Component(registration, "Registration module", "C#, .NET", "Модуль регистрации пользователей")
+        Component(tariff, "Tariff constructor", "C#, .NET", "Модуль подбора тарифов") 
+        Component(clientLK, "Account management module", "C#, .NET", "Модуль управления личным кабинетом клиента")
+        Component(bookingTable, "Booking table module", "C#, .NET", "Модуль бронирования столика пользователем")
+        }
+        ContainerDb(db, "СУБД", "PostgreSQL", "Хранение данных бизнес-логики")
+    }
+    Boundary(service, "Микросервис логирования") {
+        Container(logUI, "Log UI", "Kibana", "Просмотр логов")
+        Container(log, "Ситема логирования", "Elastiqsearch", "Управлени логированием и хранение логов")
+    }
+    Boundary(admin, "Служебные сервисы") {
+        Container(auth, "Authentification service", "C#, .NET", "Сервис авторизации и аутентификации")
+        ContainerQueue(api, "API Gateway", "Azure API", "Обеспечивает взаимодействие с внешними сервисами")
+        ContainerQueue(kafka, "Брокер сообщений", "Apache Kafka", "Сбор, обработка и передача сообщений")
+    }
+}
+Boundary(systemsExt, "Внешние сервисы"){
+    System_Ext(rusprofile, "Rusprofile", "Сервис проверки контрагентов")
+    System_Ext(maps, "Google Maps", "Просмотр информации о ресторанах на карте")
+    System_Ext(analitics, "Google Analitycs", "Система веб-аналитики")
+    'System_Ext(dadata, "DaData", "Получение информации о клиентах и контрагентах")
+    System_Ext(rkeeper, "R-Keeper", "Сервис автоматизации бронирвания столиков")
+    System_Ext(email, "E-mail server", "Хранение и передача сообщений информационных писем, подтверждение аккаунта")
+}
+
+'Lay_D(rkeeper, email)
+'Lay_D(email, rusprofile)
+'Lay_D(rusprofile, analitics)
+'Lay_D(analitics, maps)
+'Lay_D(dadata, maps)
+'Lay_Distance(bookingSystem, systemsExt, 2)
+
+Rel_D(user, mobileApp, " ", REST/HTTP)
+Rel_D(user, webUI, " ", REST/HTTP)
+Rel_D(manager, webUI, " ", REST/HTTP)
+Rel_D(client, webUI, " ", REST/HTTP)
+
+Rel_D(mobileApp, api, "Перенаправляет запросы", "HTTPS")
+Rel_D(webUI, api, "Перенаправляет запросы", "HTTPS")
+Rel_U(bookingService, api, "Запрашивает инфорацию для выполнения бизнес-логики", "REST/HTTP")
+BiRel_D(bookingService, db, "Чтение и запись в БД", "ODBC")
+Rel_U(logUI, log, "Запрашивает данные для визуализации", "REST/HTTP")
+Rel(api, auth, "Запрашивает авторизацию", "REST/HTTP")
+Rel_D(api, kafka, "Отправляет логи", "REST/HTTP")
+Rel_D(log, kafka, "Запрашивает логи", "REST/HTTP")
+Rel_D(auth, db, "Запрашивает данные о зарегистрированных пользователях", "REST/HTTP")
+
+Rel(api, rkeeper, "Запрашивает информацию о статусе столиков", "REST/HTTP")
+Rel(api, email, "Передает запрос на отправку сообщения", "SMTP")
+Rel(api, rusprofile, "Запрашивает информацию о клиенте", "REST/HTTP")
+'Rel_D(api, dadata, "Запрос информации о клиентах и контрагентах", "REST/HTTP")
+Rel(api, maps, "Отображение инофрмации на карте, геопозиционирование, адреса", "REST/HTTP")
+Rel(api, analitics, "Передача данных для формирования отчетов", "REST/HTTP")
+
+@enduml
